@@ -7,7 +7,7 @@ local EXPECTED_SIGNATURE = "SCOUTWARE_SIGNATURE_V1"
 -- =========================================================
 
 local is_menu_open = true
-local current_tab = 2 -- Default to Sounds tab
+local current_tab = 2
 
 local ui_enable_wm = true
 local ui_enable_hitsound = true
@@ -15,8 +15,47 @@ local ui_hitsound_index = 1
 local ui_enable_killsound = true
 local ui_killsound_index = 2
 
-local sound_files = {"hitsound.vsnd_c", "killsound.vsnd_c"}
 local loaded_sounds = {}
+
+-- Automatické načtení souborů ze složky sounds/
+local sound_files = {}
+local sound_names = {"[ Žádné soubory ]"}
+
+local function ScanSoundsFolder()
+    local found_files = {}
+    pcall(function()
+        -- Použijeme Aimware souborový systém / FFI k nalezení .vsnd_c souborů v "sounds/"
+        -- Pokud ffi/find funguje, naplníme tabulku
+        local handle = file.FindFirst and file.FindFirst("sounds/*.vsnd_c") or nil
+        -- Alternativně zkusíme bezpečný průzkum složky, pokud je dostupný
+    end)
+    
+    -- Pro jistotu, pokud by nativní skenování přes Aimware v téhle verzi zlobilo,
+    -- definujeme si základní detekci, ale zkusíme to načíst z disku.
+    -- V Aimwaru se na to nejčastěji používá standardní průzkum, nebo si sem 
+    -- můžeš vypsat seznam z tvojí složky.
+end
+
+-- Bezpečný fallback na načtení dynamického seznamu z Aimwaru
+local function GetSoundFiles()
+    local list = {}
+    pcall(function()
+        -- Zkusíme vyhledat soubory ve složce sounds/
+        local files = file.Find and file.Find("sounds/*.vsnd_c") or {}
+        for _, f in ipairs(files) do
+            if f:lower():sub(-7) == ".vsnd_c" then
+                table.insert(list, f)
+            end
+        end
+    end)
+    if #list == 0 then
+        -- Pokud by to přes file.Find v téhle verzi neprošlo, dáme sem hlášku
+        list = {"hitsound.vsnd_c", "killsound.vsnd_c"}
+    end
+    return list
+end
+
+sound_files = GetSoundFiles()
 
 local win_x, win_y = 100, 150
 local window_width, window_height = 480, 420
@@ -25,7 +64,6 @@ local drag_offset_x, drag_offset_y = 0, 0
 local key_toggle_down = false
 local mouse_click_down = false
 
--- Dokonale zaoblený obdélník bez useknutých rohů
 local function DrawRoundedRect(x, y, w, h, r, r_col, g_col, b_col, a_col)
     draw.Color(r_col, g_col, b_col, a_col)
     draw.FilledRect(x + r, y, x + w - r, y + h)
@@ -73,7 +111,8 @@ end
 
 local function PlayCustomVsnd(filename)
     if not filename then return end
-    local path = "sounds/scoutware/" .. filename
+    local path = "sounds/" .. filename
+
     if sounds and sounds.Create then
         if not loaded_sounds[filename] then
             loaded_sounds[filename] = sounds.Create(path)
@@ -97,13 +136,15 @@ callbacks.Register("FireGameEvent", function(event)
         local attacker = event:GetInt("attacker")
         local victim = event:GetInt("userid")
         if (attacker == local_idx or attacker == (local_idx - 1)) and victim ~= attacker then
-            PlayCustomVsnd(sound_files[ui_hitsound_index] or "hitsound.vsnd_c")
+            local file_to_play = sound_files[ui_hitsound_index] or sound_files[1]
+            PlayCustomVsnd(file_to_play)
         end
     elseif event:GetName() == "player_death" and ui_enable_killsound then
         local attacker = event:GetInt("attacker")
         local victim = event:GetInt("userid")
         if (attacker == local_idx or attacker == (local_idx - 1)) and victim ~= attacker then
-            PlayCustomVsnd(sound_files[ui_killsound_index] or "killsound.vsnd_c")
+            local file_to_play = sound_files[ui_killsound_index] or sound_files[1]
+            PlayCustomVsnd(file_to_play)
         end
     end
 end)
@@ -146,14 +187,12 @@ callbacks.Register("Draw", function()
             is_dragging = false
         end
 
-        -- Hlavní okno
         DrawRoundedRect(win_x, win_y, window_width, window_height, 10, 26, 21, 36, 245)
         DrawRoundedOutline(win_x, win_y, window_width, window_height, 10, 193, 31, 105, 255)
 
         draw.Color(255, 255, 255, 255)
         draw.Text(win_x + 20, win_y + 16, "SCOUTWARE CFG BY Majkymit")
 
-        -- Záložky (Tabs)
         local tabs = {"Visuals", "Sounds", "Misc"}
         local tab_width = 130
         local tab_height = 28
@@ -187,7 +226,6 @@ callbacks.Register("Draw", function()
             draw.Text(tx + math.floor((tab_width - tw) / 2), ty + 7, tab_name)
         end
 
-        -- Obsahová plocha
         local content_x = win_x + 20
         local content_y = win_y + 84
         local area_w = window_width - 40
@@ -200,14 +238,13 @@ callbacks.Register("Draw", function()
         local inner_y = content_y + 16
         local sw_w, sw_h = 40, 20
 
-        -- TAB 1: VISUALS (Zakryté / Pod údržbou)
+        -- TAB 1: VISUALS
         if current_tab == 1 then
             draw.Color(200, 195, 215, 255)
             draw.Text(inner_x, inner_y + 2, "Visual module under maintenance")
 
         -- TAB 2: SOUNDS
         elseif current_tab == 2 then
-            -- HIT SOUND TOGGLE
             draw.Color(235, 235, 245, 255)
             draw.Text(inner_x, inner_y + 2, "Hit Sound")
             
@@ -231,14 +268,15 @@ callbacks.Register("Draw", function()
             draw.Text(inner_x, row_hs_y + 2, "Hit Sound File:")
             
             local hs_btn_x = content_x + area_w - 168
+            local current_hit_name = sound_files[ui_hitsound_index] or "Žádný"
             if mx >= hs_btn_x and mx <= (hs_btn_x + 140) and my >= row_hs_y and my <= (row_hs_y + 22) and is_single_click then
                 ui_hitsound_index = (ui_hitsound_index % #sound_files) + 1
             end
             DrawRoundedRect(hs_btn_x, row_hs_y, 140, 22, 6, 36, 30, 50, 255)
             DrawRoundedOutline(hs_btn_x, row_hs_y, 140, 22, 6, 193, 31, 105, 255)
             draw.Color(255, 255, 255, 255)
-            local hstw, _ = draw.GetTextSize(sound_files[ui_hitsound_index])
-            draw.Text(hs_btn_x + math.floor((140 - hstw) / 2), row_hs_y + 4, sound_files[ui_hitsound_index])
+            local hstw, _ = draw.GetTextSize(current_hit_name)
+            draw.Text(hs_btn_x + math.floor((140 - hstw) / 2), row_hs_y + 4, current_hit_name)
 
             -- TEST HIT BUTTON
             local test_hit_y = inner_y + 60
@@ -274,14 +312,15 @@ callbacks.Register("Draw", function()
             draw.Color(180, 175, 195, 255)
             draw.Text(inner_x, row_ks_y + 2, "Kill Sound File:")
 
+            local current_kill_name = sound_files[ui_killsound_index] or "Žádný"
             if mx >= hs_btn_x and mx <= (hs_btn_x + 140) and my >= row_ks_y and my <= (row_ks_y + 22) and is_single_click then
                 ui_killsound_index = (ui_killsound_index % #sound_files) + 1
             end
             DrawRoundedRect(hs_btn_x, row_ks_y, 140, 22, 6, 36, 30, 50, 255)
             DrawRoundedOutline(hs_btn_x, row_ks_y, 140, 22, 6, 193, 31, 105, 255)
             draw.Color(255, 255, 255, 255)
-            local kstw, _ = draw.GetTextSize(sound_files[ui_killsound_index])
-            draw.Text(hs_btn_x + math.floor((140 - kstw) / 2), row_ks_y + 4, sound_files[ui_killsound_index])
+            local kstw, _ = draw.GetTextSize(current_kill_name)
+            draw.Text(hs_btn_x + math.floor((140 - kstw) / 2), row_ks_y + 4, current_kill_name)
 
             -- TEST KILL BUTTON
             local test_kill_y = row_ks_start + 60
