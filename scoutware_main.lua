@@ -197,7 +197,7 @@ callbacks.Register("Draw", function()
 
         local inner_x = content_x + 16
         local inner_y = content_y + 16
-        local sw_w, sw_h = 44, 22
+        local sw_w, sw_h = 40, 20
 
         -- TAB 1: VISUALS
         if current_tab == 1 then
@@ -210,19 +210,18 @@ callbacks.Register("Draw", function()
             draw.Color(235, 235, 245, 255)
             draw.Text(inner_x, inner_y + 2, "Hit Sound")
             
-            -- Opravená pozice přepínače (zaseknutá správně uvnitř)
             local sw_hit_x = content_x + area_w - sw_w - 24
             if mx >= sw_hit_x and mx <= (sw_hit_x + sw_w) and my >= inner_y and my <= (inner_y + sw_h) and is_single_click then
                 ui_enable_hitsound = not ui_enable_hitsound
             end
 
             if ui_enable_hitsound then
-                DrawRoundedRect(sw_hit_x, inner_y, sw_w, sw_h, 11, 193, 31, 105, 255)
-                DrawRoundedRect(sw_hit_x + sw_w - 19, inner_y + 2, 17, 17, 8, 255, 255, 255, 255)
+                DrawRoundedRect(sw_hit_x, inner_y, sw_w, sw_h, 5, 193, 31, 105, 255)
+                DrawRoundedRect(sw_hit_x + sw_w - 18, inner_y + 2, 16, 16, 4, 255, 255, 255, 255)
             else
-                DrawRoundedRect(sw_hit_x, inner_y, sw_w, sw_h, 11, 36, 30, 50, 255)
-                DrawRoundedOutline(sw_hit_x, inner_y, sw_w, sw_h, 11, 255, 255, 255, 15)
-                DrawRoundedRect(sw_hit_x + 2, inner_y + 2, 17, 17, 8, 110, 105, 125, 255)
+                DrawRoundedRect(sw_hit_x, inner_y, sw_w, sw_h, 5, 36, 30, 50, 255)
+                DrawRoundedOutline(sw_hit_x, inner_y, sw_w, sw_h, 5, 255, 255, 255, 15)
+                DrawRoundedRect(sw_hit_x + 2, inner_y + 2, 16, 16, 4, 110, 105, 125, 255)
             end
 
             -- HIT SOUND FILE SELECTOR
@@ -261,12 +260,12 @@ callbacks.Register("Draw", function()
             end
 
             if ui_enable_killsound then
-                DrawRoundedRect(sw_hit_x, row_ks_start, sw_w, sw_h, 11, 193, 31, 105, 255)
-                DrawRoundedRect(sw_hit_x + sw_w - 19, row_ks_start + 2, 17, 17, 8, 255, 255, 255, 255)
+                DrawRoundedRect(sw_hit_x, row_ks_start, sw_w, sw_h, 5, 193, 31, 105, 255)
+                DrawRoundedRect(sw_hit_x + sw_w - 18, row_ks_start + 2, 16, 16, 4, 255, 255, 255, 255)
             else
-                DrawRoundedRect(sw_hit_x, row_ks_start, sw_w, sw_h, 11, 36, 30, 50, 255)
-                DrawRoundedOutline(sw_hit_x, row_ks_start, sw_w, sw_h, 11, 255, 255, 255, 15)
-                DrawRoundedRect(sw_hit_x + 2, row_ks_start + 2, 17, 17, 8, 110, 105, 125, 255)
+                DrawRoundedRect(sw_hit_x, row_ks_start, sw_w, sw_h, 5, 36, 30, 50, 255)
+                DrawRoundedOutline(sw_hit_x, row_ks_start, sw_w, sw_h, 5, 255, 255, 255, 15)
+                DrawRoundedRect(sw_hit_x + 2, row_ks_start + 2, 16, 16, 4, 110, 105, 125, 255)
             end
 
             -- KILL SOUND FILE SELECTOR
@@ -303,12 +302,12 @@ callbacks.Register("Draw", function()
                 ui_enable_wm = not ui_enable_wm
             end
             if ui_enable_wm then
-                DrawRoundedRect(sw_wm_x, inner_y, sw_w, sw_h, 11, 193, 31, 105, 255)
-                DrawRoundedRect(sw_wm_x + sw_w - 19, inner_y + 2, 17, 17, 8, 255, 255, 255, 255)
+                DrawRoundedRect(sw_wm_x, inner_y, sw_w, sw_h, 5, 193, 31, 105, 255)
+                DrawRoundedRect(sw_wm_x + sw_w - 18, inner_y + 2, 16, 16, 4, 255, 255, 255, 255)
             else
-                DrawRoundedRect(sw_wm_x, inner_y, sw_w, sw_h, 11, 36, 30, 50, 255)
-                DrawRoundedOutline(sw_wm_x, inner_y, sw_w, sw_h, 11, 255, 255, 255, 15)
-                DrawRoundedRect(sw_wm_x + 2, inner_y + 2, 17, 17, 8, 110, 105, 125, 255)
+                DrawRoundedRect(sw_wm_x, inner_y, sw_w, sw_h, 5, 36, 30, 50, 255)
+                DrawRoundedOutline(sw_wm_x, inner_y, sw_w, sw_h, 5, 255, 255, 255, 15)
+                DrawRoundedRect(sw_wm_x + 2, inner_y + 2, 16, 16, 4, 110, 105, 125, 255)
             end
         end
     end
