@@ -17,47 +17,15 @@ local ui_killsound_index = 1
 
 local loaded_sounds = {}
 
--- Automatické vyhledání .vsnd_c souborů ze složky sounds/ přes FFI
-local function GetSoundFiles()
-    local list = {}
-    pcall(function()
-        local ffi = rawget(_G, "ffi")
-        if ffi then
-            ffi.cdef[[
-                typedef struct {
-                    uint32_t attributes;
-                    uint32_t creation_lo, creation_hi;
-                    uint32_t access_lo, access_hi;
-                    uint32_t write_lo, write_hi;
-                    uint32_t size_hi, size_lo;
-                    uint32_t reserved0, reserved1;
-                    char filename[260];
-                    char alternate[14];
-                } MOI_FIND_DATA;
-                void* FindFirstFileA(const char*, MOI_FIND_DATA*);
-                int FindNextFileA(void*, MOI_FIND_DATA*);
-                int FindClose(void*);
-            ]]
-            local data = ffi.new("MOI_FIND_DATA")
-            local handle = ffi.C.FindFirstFileA("sounds/*.vsnd_c", data)
-            if handle ~= nil and tonumber(ffi.cast("intptr_t", handle)) ~= -1 then
-                repeat
-                    local name = ffi.string(data.filename)
-                    if name ~= "." and name ~= ".." then
-                        table.insert(list, name)
-                    end
-                until ffi.C.FindNextFileA(handle, data) == 0
-                ffi.C.FindClose(handle)
-            end
-        end
-    end)
-    if #list == 0 then
-        list = {"hitsound.vsnd_c", "killsound.vsnd_c"}
-    end
-    return list
-end
-
-local sound_files = GetSoundFiles()
+-- Stabilní seznam souborů ze složky sounds/ (můžeš si sem dopsat libovolné názvy)
+local sound_files = {
+    "hitsound.vsnd_c",
+    "killsound.vsnd_c",
+    "bell.vsnd_c",
+    "bubble.vsnd_c",
+    "pop.vsnd_c",
+    "stab.vsnd_c"
+}
 
 local win_x, win_y = 100, 150
 local window_width, window_height = 480, 420
@@ -310,7 +278,7 @@ callbacks.Register("Draw", function()
                 DrawRoundedRect(sw_hit_x + 2, row_ks_start + 2, 16, 16, 4, 110, 105, 125, 255)
             end
 
-            -- KILL SOUND FILE SELECTOR (samostatné tlačítko row_ks_y)
+            -- KILL SOUND FILE SELECTOR
             local row_ks_y = row_ks_start + 32
             draw.Color(180, 175, 195, 255)
             draw.Text(inner_x, row_ks_y + 2, "Kill Sound File:")
