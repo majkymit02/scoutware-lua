@@ -9,11 +9,17 @@ local EXPECTED_SIGNATURE = "SCOUTWARE_SIGNATURE_V1"
 local is_menu_open = true
 local current_tab = 2
 
+-- Config Variables
 local ui_enable_wm = true
 local ui_enable_hitsound = true
 local ui_hitsound_index = 1
 local ui_enable_killsound = true
 local ui_killsound_index = 2
+
+-- Scope Overlay Variables (získané z tvého kódu)
+local ui_enable_scope_overlay = false
+local ui_replace_original_scope = true
+local scope_color_r, scope_color_g, scope_color_b, scope_color_a = 255, 205, 160, 255
 
 local sound_files = {"hitsound.vsnd_c", "killsound.vsnd_c"}
 local loaded_sounds = {}
@@ -25,6 +31,7 @@ local drag_offset_x, drag_offset_y = 0, 0
 local key_toggle_down = false
 local mouse_click_down = false
 
+-- Opravená funkce pro vykreslení zaoblených obdélníků (zcela čisté rohy bez useknutí)
 local function DrawRoundedRect(x, y, w, h, r, r_col, g_col, b_col, a_col)
     draw.Color(r_col, g_col, b_col, a_col)
     draw.FilledRect(x + r, y, x + w - r, y + h)
@@ -86,6 +93,7 @@ local function PlayCustomVsnd(filename)
     if client and client.PlaySound then client.PlaySound(path); return end
 end
 
+-- Game Events pro Soundy
 callbacks.Register("FireGameEvent", function(event)
     if not event then return end
     local local_player = entities.GetLocalPlayer()
@@ -107,9 +115,36 @@ callbacks.Register("FireGameEvent", function(event)
     end
 end)
 
+-- Scope Overlay Rendering logika
 callbacks.Register("Draw", function()
     local sw, sh = draw.GetScreenSize()
     if not sw or not sh then return end
+
+    -- Native Scope Overlay skrytí / zobrazení
+    if ui_enable_scope_overlay and ui_replace_original_scope then
+        pcall(function()
+            gui.SetValue("world.noscope", true)
+            gui.SetValue("world.noscopeoverlay", false)
+        end)
+    end
+
+    -- Vykreslení custom neverlose glow scope středu, pokud je hráč v základu v zoomu
+    if ui_enable_scope_overlay then
+        local lp = entities.GetLocalPlayer()
+        if lp and lp:IsAlive() then
+            local scoped = false
+            pcall(function() scoped = lp:GetPropBool("m_bIsScoped") end)
+            if scoped then
+                local cx, cy = math.floor(sw / 2), math.floor(sh / 2)
+                draw.Color(scope_color_r, scope_color_g, scope_color_b, scope_color_a)
+                draw.FilledCircle(cx, cy, 2)
+                draw.Line(cx - 30, cy, cx - 6, cy)
+                draw.Line(cx + 6, cy, cx + 30, cy)
+                draw.Line(cx, cy - 30, cx, cy - 6)
+                draw.Line(cx, cy + 6, cx, cy + 30)
+            end
+        end
+    end
 
     local is_insert_down = input.IsButtonDown(45)
     if is_insert_down and not key_toggle_down then
@@ -152,8 +187,8 @@ callbacks.Register("Draw", function()
         draw.Color(255, 255, 255, 255)
         draw.Text(win_x + 20, win_y + 16, "SCOUTWARE CFG BY Majkymit")
 
-        -- Záložky (Tabs)
-        local tabs = {"Visuals", "Sounds", "Misc"}
+        -- Záložky (Tabs) - Přejmenováno na Scope, Sounds, Misc
+        local tabs = {"Scope", "Sounds", "Misc"}
         local tab_width = 130
         local tab_height = 28
         local start_tab_x = win_x + 20
@@ -197,35 +232,63 @@ callbacks.Register("Draw", function()
 
         local inner_x = content_x + 16
         local inner_y = content_y + 16
-        local sw_w, sw_h = 44, 22
+        local sw_w, sw_h = 40, 20
 
-        -- TAB 1: VISUALS
+        -- TAB 1: SCOPE OVERLAY
         if current_tab == 1 then
-            draw.Color(200, 195, 215, 255)
-            draw.Text(inner_x, inner_y + 2, "Visual module under maintenance")
+            draw.Color(235, 235, 245, 255)
+            draw.Text(inner_x, inner_y + 2, "Enable Scope Overlay")
+            
+            local sw_scope_x = content_x + area_w - sw_w - 24
+            if mx >= sw_scope_x and mx <= (sw_scope_x + sw_w) and my >= inner_y and my <= (inner_y + sw_h) and is_single_click then
+                ui_enable_scope_overlay = not ui_enable_scope_overlay
+            end
 
-        -- TAB 2: SOUNDS
+            if ui_enable_scope_overlay then
+                DrawRoundedRect(sw_scope_x, inner_y, sw_w, sw_h, 5, 193, 31, 105, 255)
+                DrawRoundedRect(sw_scope_x + sw_w - 18, inner_y + 2, 16, 16, 4, 255, 255, 255, 255)
+            else
+                DrawRoundedRect(sw_scope_x, inner_y, sw_w, sw_h, 5, 36, 30, 50, 255)
+                DrawRoundedOutline(sw_scope_x, inner_y, sw_w, sw_h, 5, 255, 255, 255, 15)
+                DrawRoundedRect(sw_scope_x + 2, inner_y + 2, 16, 16, 4, 110, 105, 125, 255)
+            end
+
+            local row_rep_y = inner_y + 35
+            draw.Color(235, 235, 245, 255)
+            draw.Text(inner_x, row_rep_y + 2, "Replace Original Scope")
+
+            if mx >= sw_scope_x and mx <= (sw_scope_x + sw_w) and my >= row_rep_y and my <= (row_rep_y + sw_h) and is_single_click then
+                ui_replace_original_scope = not ui_replace_original_scope
+            end
+
+            if ui_replace_original_scope then
+                DrawRoundedRect(sw_scope_x, row_rep_y, sw_w, sw_h, 5, 193, 31, 105, 255)
+                DrawRoundedRect(sw_scope_x + sw_w - 18, row_rep_y + 2, 16, 16, 4, 255, 255, 255, 255)
+            else
+                DrawRoundedRect(sw_scope_x, row_rep_y, sw_w, sw_h, 5, 36, 30, 50, 255)
+                DrawRoundedOutline(sw_scope_x, row_rep_y, sw_w, sw_h, 5, 255, 255, 255, 15)
+                DrawRoundedRect(sw_scope_x + 2, row_rep_y + 2, 16, 16, 4, 110, 105, 125, 255)
+            end
+
+        -- TAB 2: SOUNDS (HIT / KILL)
         elseif current_tab == 2 then
-            -- HIT SOUND TOGGLE
             draw.Color(235, 235, 245, 255)
             draw.Text(inner_x, inner_y + 2, "Hit Sound")
             
-            -- Opravená pozice přepínače (zaseknutá správně uvnitř)
             local sw_hit_x = content_x + area_w - sw_w - 24
             if mx >= sw_hit_x and mx <= (sw_hit_x + sw_w) and my >= inner_y and my <= (inner_y + sw_h) and is_single_click then
                 ui_enable_hitsound = not ui_enable_hitsound
             end
 
             if ui_enable_hitsound then
-                DrawRoundedRect(sw_hit_x, inner_y, sw_w, sw_h, 11, 193, 31, 105, 255)
-                DrawRoundedRect(sw_hit_x + sw_w - 19, inner_y + 2, 17, 17, 8, 255, 255, 255, 255)
+                DrawRoundedRect(sw_hit_x, inner_y, sw_w, sw_h, 5, 193, 31, 105, 255)
+                DrawRoundedRect(sw_hit_x + sw_w - 18, inner_y + 2, 16, 16, 4, 255, 255, 255, 255)
             else
-                DrawRoundedRect(sw_hit_x, inner_y, sw_w, sw_h, 11, 36, 30, 50, 255)
-                DrawRoundedOutline(sw_hit_x, inner_y, sw_w, sw_h, 11, 255, 255, 255, 15)
-                DrawRoundedRect(sw_hit_x + 2, inner_y + 2, 17, 17, 8, 110, 105, 125, 255)
+                DrawRoundedRect(sw_hit_x, inner_y, sw_w, sw_h, 5, 36, 30, 50, 255)
+                DrawRoundedOutline(sw_hit_x, inner_y, sw_w, sw_h, 5, 255, 255, 255, 15)
+                DrawRoundedRect(sw_hit_x + 2, inner_y + 2, 16, 16, 4, 110, 105, 125, 255)
             end
 
-            -- HIT SOUND FILE SELECTOR
             local row_hs_y = inner_y + 32
             draw.Color(180, 175, 195, 255)
             draw.Text(inner_x, row_hs_y + 2, "Hit Sound File:")
@@ -240,7 +303,6 @@ callbacks.Register("Draw", function()
             local hstw, _ = draw.GetTextSize(sound_files[ui_hitsound_index])
             draw.Text(hs_btn_x + math.floor((140 - hstw) / 2), row_hs_y + 4, sound_files[ui_hitsound_index])
 
-            -- TEST HIT BUTTON
             local test_hit_y = inner_y + 60
             local test_btn_w = 110
             if mx >= inner_x and mx <= (inner_x + test_btn_w) and my >= test_hit_y and my <= (test_hit_y + 20) and is_single_click then
@@ -251,7 +313,7 @@ callbacks.Register("Draw", function()
             local tht_w, _ = draw.GetTextSize("TEST HIT")
             draw.Text(inner_x + math.floor((test_btn_w - tht_w) / 2), test_hit_y + 3, "TEST HIT")
 
-            -- KILL SOUND TOGGLE
+            -- KILL SOUND
             local row_ks_start = inner_y + 95
             draw.Color(235, 235, 245, 255)
             draw.Text(inner_x, row_ks_start + 2, "Kill Sound")
@@ -261,15 +323,14 @@ callbacks.Register("Draw", function()
             end
 
             if ui_enable_killsound then
-                DrawRoundedRect(sw_hit_x, row_ks_start, sw_w, sw_h, 11, 193, 31, 105, 255)
-                DrawRoundedRect(sw_hit_x + sw_w - 19, row_ks_start + 2, 17, 17, 8, 255, 255, 255, 255)
+                DrawRoundedRect(sw_hit_x, row_ks_start, sw_w, sw_h, 5, 193, 31, 105, 255)
+                DrawRoundedRect(sw_hit_x + sw_w - 18, row_ks_start + 2, 16, 16, 4, 255, 255, 255, 255)
             else
-                DrawRoundedRect(sw_hit_x, row_ks_start, sw_w, sw_h, 11, 36, 30, 50, 255)
-                DrawRoundedOutline(sw_hit_x, row_ks_start, sw_w, sw_h, 11, 255, 255, 255, 15)
-                DrawRoundedRect(sw_hit_x + 2, row_ks_start + 2, 17, 17, 8, 110, 105, 125, 255)
+                DrawRoundedRect(sw_hit_x, row_ks_start, sw_w, sw_h, 5, 36, 30, 50, 255)
+                DrawRoundedOutline(sw_hit_x, row_ks_start, sw_w, sw_h, 5, 255, 255, 255, 15)
+                DrawRoundedRect(sw_hit_x + 2, row_ks_start + 2, 16, 16, 4, 110, 105, 125, 255)
             end
 
-            -- KILL SOUND FILE SELECTOR
             local row_ks_y = row_ks_start + 32
             draw.Color(180, 175, 195, 255)
             draw.Text(inner_x, row_ks_y + 2, "Kill Sound File:")
@@ -283,7 +344,6 @@ callbacks.Register("Draw", function()
             local kstw, _ = draw.GetTextSize(sound_files[ui_killsound_index])
             draw.Text(hs_btn_x + math.floor((140 - kstw) / 2), row_ks_y + 4, sound_files[ui_killsound_index])
 
-            -- TEST KILL BUTTON
             local test_kill_y = row_ks_start + 60
             if mx >= inner_x and mx <= (inner_x + test_btn_w) and my >= test_kill_y and my <= (test_kill_y + 20) and is_single_click then
                 PlayCustomVsnd(sound_files[ui_killsound_index])
@@ -303,12 +363,12 @@ callbacks.Register("Draw", function()
                 ui_enable_wm = not ui_enable_wm
             end
             if ui_enable_wm then
-                DrawRoundedRect(sw_wm_x, inner_y, sw_w, sw_h, 11, 193, 31, 105, 255)
-                DrawRoundedRect(sw_wm_x + sw_w - 19, inner_y + 2, 17, 17, 8, 255, 255, 255, 255)
+                DrawRoundedRect(sw_wm_x, inner_y, sw_w, sw_h, 5, 193, 31, 105, 255)
+                DrawRoundedRect(sw_wm_x + sw_w - 18, inner_y + 2, 16, 16, 4, 255, 255, 255, 255)
             else
-                DrawRoundedRect(sw_wm_x, inner_y, sw_w, sw_h, 11, 36, 30, 50, 255)
-                DrawRoundedOutline(sw_wm_x, inner_y, sw_w, sw_h, 11, 255, 255, 255, 15)
-                DrawRoundedRect(sw_wm_x + 2, inner_y + 2, 17, 17, 8, 110, 105, 125, 255)
+                DrawRoundedRect(sw_wm_x, inner_y, sw_w, sw_h, 5, 36, 30, 50, 255)
+                DrawRoundedOutline(sw_wm_x, inner_y, sw_w, sw_h, 5, 255, 255, 255, 15)
+                DrawRoundedRect(sw_wm_x + 2, inner_y + 2, 16, 16, 4, 110, 105, 125, 255)
             end
         end
     end
