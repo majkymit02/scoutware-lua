@@ -1,4 +1,4 @@
-local MOI_MULTSCRIPT_VERSION = "2.3.0"
+local MOI_MULTSCRIPT_VERSION = "2.3.1"
 local EXPECTED_SIGNATURE = "SCOUTWARE_SIGNATURE_V1"
 
 -- =========================================================
