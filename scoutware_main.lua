@@ -152,7 +152,7 @@ callbacks.Register("Draw", function()
         draw.Color(255, 255, 255, 255)
         draw.Text(win_x + 20, win_y + 16, "SCOUTWARE CFG BY Majkymit")
 
-        -- Záložky (Tabs) posunuté pod nadpis
+        -- Záložky (Tabs)
         local tabs = {"Visuals", "Sounds", "Misc"}
         local tab_width = 130
         local tab_height = 28
@@ -206,6 +206,7 @@ callbacks.Register("Draw", function()
 
         -- TAB 2: SOUNDS
         elseif current_tab == 2 then
+            -- HIT SOUND TOGGLE
             draw.Color(235, 235, 245, 255)
             draw.Text(inner_x, inner_y + 2, "Enable Hit Sound")
             
@@ -223,31 +224,34 @@ callbacks.Register("Draw", function()
                 DrawRoundedRect(sw_hit_x + 2, inner_y + 2, 17, 17, 8, 110, 105, 125, 255)
             end
 
-            local row_hs_y = inner_y + 36
+            -- HIT SOUND FILE SELECTOR
+            local row_hs_y = inner_y + 32
             draw.Color(180, 175, 195, 255)
             draw.Text(inner_x, row_hs_y + 2, "Hit Sound File:")
             
-            local hs_btn_x = content_x + area_w - 170
-            if mx >= hs_btn_x and mx <= (hs_btn_x + 150) and my >= row_hs_y and my <= (row_hs_y + 22) and is_single_click then
+            local hs_btn_x = content_x + area_w - 160
+            if mx >= hs_btn_x and mx <= (hs_btn_x + 140) and my >= row_hs_y and my <= (row_hs_y + 22) and is_single_click then
                 ui_hitsound_index = (ui_hitsound_index % #sound_files) + 1
             end
-            DrawRoundedRect(hs_btn_x, row_hs_y, 150, 22, 6, 36, 30, 50, 255)
-            DrawRoundedOutline(hs_btn_x, row_hs_y, 150, 22, 6, 193, 31, 105, 255)
+            DrawRoundedRect(hs_btn_x, row_hs_y, 140, 22, 6, 36, 30, 50, 255)
+            DrawRoundedOutline(hs_btn_x, row_hs_y, 140, 22, 6, 193, 31, 105, 255)
             draw.Color(255, 255, 255, 255)
             local hstw, _ = draw.GetTextSize(sound_files[ui_hitsound_index])
-            draw.Text(hs_btn_x + math.floor((150 - hstw) / 2), row_hs_y + 4, sound_files[ui_hitsound_index])
+            draw.Text(hs_btn_x + math.floor((140 - hstw) / 2), row_hs_y + 4, sound_files[ui_hitsound_index])
 
-            local test_hit_y = inner_y + 68
-            local test_btn_x = inner_x
-            if mx >= test_btn_x and mx <= (test_btn_x + 120) and my >= test_hit_y and my <= (test_hit_y + 22) and is_single_click then
+            -- TEST HIT BUTTON (Zkrácené, aby nezasahovalo dolů)
+            local test_hit_y = inner_y + 60
+            local test_btn_w = 110
+            if mx >= inner_x and mx <= (inner_x + test_btn_w) and my >= test_hit_y and my <= (test_hit_y + 20) and is_single_click then
                 PlayCustomVsnd(sound_files[ui_hitsound_index])
             end
-            DrawRoundedRect(test_btn_x, test_hit_y, 120, 22, 6, 193, 31, 105, 255)
+            DrawRoundedRect(inner_x, test_hit_y, test_btn_w, 20, 5, 193, 31, 105, 255)
             draw.Color(255, 255, 255, 255)
-            draw.Text(test_btn_x + 16, test_hit_y + 4, "TEST HIT SOUND")
+            local tht_w, _ = draw.GetTextSize("TEST HIT")
+            draw.Text(inner_x + math.floor((test_btn_w - tht_w) / 2), test_hit_y + 3, "TEST HIT")
 
-            -- KILL SOUND
-            local row_ks_start = inner_y + 110
+            -- KILL SOUND TOGGLE
+            local row_ks_start = inner_y + 95
             draw.Color(235, 235, 245, 255)
             draw.Text(inner_x, row_ks_start + 2, "Enable Kill Sound")
 
@@ -264,26 +268,29 @@ callbacks.Register("Draw", function()
                 DrawRoundedRect(sw_hit_x + 2, row_ks_start + 2, 17, 17, 8, 110, 105, 125, 255)
             end
 
-            local row_ks_y = row_ks_start + 36
+            -- KILL SOUND FILE SELECTOR
+            local row_ks_y = row_ks_start + 32
             draw.Color(180, 175, 195, 255)
             draw.Text(inner_x, row_ks_y + 2, "Kill Sound File:")
 
-            if mx >= hs_btn_x and mx <= (hs_btn_x + 150) and my >= row_ks_y and my <= (row_ks_y + 22) and is_single_click then
+            if mx >= hs_btn_x and mx <= (hs_btn_x + 140) and my >= row_ks_y and my <= (row_ks_y + 22) and is_single_click then
                 ui_killsound_index = (ui_killsound_index % #sound_files) + 1
             end
-            DrawRoundedRect(hs_btn_x, row_ks_y, 150, 22, 6, 36, 30, 50, 255)
-            DrawRoundedOutline(hs_btn_x, row_ks_y, 150, 22, 6, 193, 31, 105, 255)
+            DrawRoundedRect(hs_btn_x, row_ks_y, 140, 22, 6, 36, 30, 50, 255)
+            DrawRoundedOutline(hs_btn_x, row_ks_y, 140, 22, 6, 193, 31, 105, 255)
             draw.Color(255, 255, 255, 255)
             local kstw, _ = draw.GetTextSize(sound_files[ui_killsound_index])
-            draw.Text(hs_btn_x + math.floor((150 - kstw) / 2), row_ks_y + 4, sound_files[ui_killsound_index])
+            draw.Text(hs_btn_x + math.floor((140 - kstw) / 2), row_ks_y + 4, sound_files[ui_killsound_index])
 
-            local test_kill_y = row_ks_start + 68
-            if mx >= test_btn_x and mx <= (test_btn_x + 120) and my >= test_kill_y and my <= (test_kill_y + 22) and is_single_click then
+            -- TEST KILL BUTTON
+            local test_kill_y = row_ks_start + 60
+            if mx >= inner_x and mx <= (inner_x + test_btn_w) and my >= test_kill_y and my <= (test_kill_y + 20) and is_single_click then
                 PlayCustomVsnd(sound_files[ui_killsound_index])
             end
-            DrawRoundedRect(test_btn_x, test_kill_y, 120, 22, 6, 193, 31, 105, 255)
+            DrawRoundedRect(inner_x, test_kill_y, test_btn_w, 20, 5, 193, 31, 105, 255)
             draw.Color(255, 255, 255, 255)
-            draw.Text(test_btn_x + 14, test_kill_y + 4, "TEST KILL SOUND")
+            local tkt_w, _ = draw.GetTextSize("TEST KILL")
+            draw.Text(inner_x + math.floor((test_btn_w - tkt_w) / 2), test_kill_y + 3, "TEST KILL")
         
         -- TAB 3: MISC
         elseif current_tab == 3 then
