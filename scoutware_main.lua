@@ -208,7 +208,7 @@ callbacks.Register("Draw", function()
         elseif current_tab == 2 then
             -- HIT SOUND TOGGLE
             draw.Color(235, 235, 245, 255)
-            draw.Text(inner_x, inner_y + 2, "Enable Hit Sound")
+            draw.Text(inner_x, inner_y + 2, "Hit Sound")
             
             local sw_hit_x = content_x + area_w - sw_w - 16
             if mx >= sw_hit_x and mx <= (sw_hit_x + sw_w) and my >= inner_y and my <= (inner_y + sw_h) and is_single_click then
@@ -239,7 +239,7 @@ callbacks.Register("Draw", function()
             local hstw, _ = draw.GetTextSize(sound_files[ui_hitsound_index])
             draw.Text(hs_btn_x + math.floor((140 - hstw) / 2), row_hs_y + 4, sound_files[ui_hitsound_index])
 
-            -- TEST HIT BUTTON (Zkrácené, aby nezasahovalo dolů)
+            -- TEST HIT BUTTON
             local test_hit_y = inner_y + 60
             local test_btn_w = 110
             if mx >= inner_x and mx <= (inner_x + test_btn_w) and my >= test_hit_y and my <= (test_hit_y + 20) and is_single_click then
@@ -253,7 +253,7 @@ callbacks.Register("Draw", function()
             -- KILL SOUND TOGGLE
             local row_ks_start = inner_y + 95
             draw.Color(235, 235, 245, 255)
-            draw.Text(inner_x, row_ks_start + 2, "Enable Kill Sound")
+            draw.Text(inner_x, row_ks_start + 2, "Kill Sound")
 
             if mx >= sw_hit_x and mx <= (sw_hit_x + sw_w) and my >= row_ks_start and my <= (row_ks_start + sw_h) and is_single_click then
                 ui_enable_killsound = not ui_enable_killsound
@@ -295,7 +295,7 @@ callbacks.Register("Draw", function()
         -- TAB 3: MISC
         elseif current_tab == 3 then
             draw.Color(235, 235, 245, 255)
-            draw.Text(inner_x, inner_y + 2, "Enable Watermark Overlay")
+            draw.Text(inner_x, inner_y + 2, "Watermark Overlay")
             local sw_wm_x = content_x + area_w - sw_w - 16
             if mx >= sw_wm_x and mx <= (sw_wm_x + sw_w) and my >= inner_y and my <= (inner_y + sw_h) and is_single_click then
                 ui_enable_wm = not ui_enable_wm
