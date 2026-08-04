@@ -210,7 +210,8 @@ callbacks.Register("Draw", function()
             draw.Color(235, 235, 245, 255)
             draw.Text(inner_x, inner_y + 2, "Hit Sound")
             
-            local sw_hit_x = content_x + area_w - sw_w - 16
+            -- Opravená pozice přepínače (zaseknutá správně uvnitř)
+            local sw_hit_x = content_x + area_w - sw_w - 24
             if mx >= sw_hit_x and mx <= (sw_hit_x + sw_w) and my >= inner_y and my <= (inner_y + sw_h) and is_single_click then
                 ui_enable_hitsound = not ui_enable_hitsound
             end
@@ -229,7 +230,7 @@ callbacks.Register("Draw", function()
             draw.Color(180, 175, 195, 255)
             draw.Text(inner_x, row_hs_y + 2, "Hit Sound File:")
             
-            local hs_btn_x = content_x + area_w - 160
+            local hs_btn_x = content_x + area_w - 168
             if mx >= hs_btn_x and mx <= (hs_btn_x + 140) and my >= row_hs_y and my <= (row_hs_y + 22) and is_single_click then
                 ui_hitsound_index = (ui_hitsound_index % #sound_files) + 1
             end
@@ -296,7 +297,8 @@ callbacks.Register("Draw", function()
         elseif current_tab == 3 then
             draw.Color(235, 235, 245, 255)
             draw.Text(inner_x, inner_y + 2, "Watermark Overlay")
-            local sw_wm_x = content_x + area_w - sw_w - 16
+            
+            local sw_wm_x = content_x + area_w - sw_w - 24
             if mx >= sw_wm_x and mx <= (sw_wm_x + sw_w) and my >= inner_y and my <= (inner_y + sw_h) and is_single_click then
                 ui_enable_wm = not ui_enable_wm
             end
