@@ -1,4 +1,4 @@
-local MOI_MULTSCRIPT_VERSION = "1.0.0"
+local MOI_MULTSCRIPT_VERSION = "1.0.1"
 local EXPECTED_SIGNATURE = "SCOUTWARE_SIGNATURE_V1"
 
 -- =========================================================
@@ -13,49 +13,51 @@ local ui_enable_wm = true
 local ui_enable_hitsound = true
 local ui_hitsound_index = 1
 local ui_enable_killsound = true
-local ui_killsound_index = 2
+local ui_killsound_index = 1
 
 local loaded_sounds = {}
 
--- Automatické načtení souborů ze složky sounds/
-local sound_files = {}
-local sound_names = {"[ Žádné soubory ]"}
-
-local function ScanSoundsFolder()
-    local found_files = {}
-    pcall(function()
-        -- Použijeme Aimware souborový systém / FFI k nalezení .vsnd_c souborů v "sounds/"
-        -- Pokud ffi/find funguje, naplníme tabulku
-        local handle = file.FindFirst and file.FindFirst("sounds/*.vsnd_c") or nil
-        -- Alternativně zkusíme bezpečný průzkum složky, pokud je dostupný
-    end)
-    
-    -- Pro jistotu, pokud by nativní skenování přes Aimware v téhle verzi zlobilo,
-    -- definujeme si základní detekci, ale zkusíme to načíst z disku.
-    -- V Aimwaru se na to nejčastěji používá standardní průzkum, nebo si sem 
-    -- můžeš vypsat seznam z tvojí složky.
-end
-
--- Bezpečný fallback na načtení dynamického seznamu z Aimwaru
+-- Automatické vyhledání .vsnd_c souborů ze složky sounds/ přes FFI
 local function GetSoundFiles()
     local list = {}
     pcall(function()
-        -- Zkusíme vyhledat soubory ve složce sounds/
-        local files = file.Find and file.Find("sounds/*.vsnd_c") or {}
-        for _, f in ipairs(files) do
-            if f:lower():sub(-7) == ".vsnd_c" then
-                table.insert(list, f)
+        local ffi = rawget(_G, "ffi")
+        if ffi then
+            ffi.cdef[[
+                typedef struct {
+                    uint32_t attributes;
+                    uint32_t creation_lo, creation_hi;
+                    uint32_t access_lo, access_hi;
+                    uint32_t write_lo, write_hi;
+                    uint32_t size_hi, size_lo;
+                    uint32_t reserved0, reserved1;
+                    char filename[260];
+                    char alternate[14];
+                } MOI_FIND_DATA;
+                void* FindFirstFileA(const char*, MOI_FIND_DATA*);
+                int FindNextFileA(void*, MOI_FIND_DATA*);
+                int FindClose(void*);
+            ]]
+            local data = ffi.new("MOI_FIND_DATA")
+            local handle = ffi.C.FindFirstFileA("sounds/*.vsnd_c", data)
+            if handle ~= nil and tonumber(ffi.cast("intptr_t", handle)) ~= -1 then
+                repeat
+                    local name = ffi.string(data.filename)
+                    if name ~= "." and name ~= ".." then
+                        table.insert(list, name)
+                    end
+                until ffi.C.FindNextFileA(handle, data) == 0
+                ffi.C.FindClose(handle)
             end
         end
     end)
     if #list == 0 then
-        -- Pokud by to přes file.Find v téhle verzi neprošlo, dáme sem hlášku
         list = {"hitsound.vsnd_c", "killsound.vsnd_c"}
     end
     return list
 end
 
-sound_files = GetSoundFiles()
+local sound_files = GetSoundFiles()
 
 local win_x, win_y = 100, 150
 local window_width, window_height = 480, 420
@@ -245,6 +247,7 @@ callbacks.Register("Draw", function()
 
         -- TAB 2: SOUNDS
         elseif current_tab == 2 then
+            -- HIT SOUND TOGGLE
             draw.Color(235, 235, 245, 255)
             draw.Text(inner_x, inner_y + 2, "Hit Sound")
             
@@ -307,7 +310,7 @@ callbacks.Register("Draw", function()
                 DrawRoundedRect(sw_hit_x + 2, row_ks_start + 2, 16, 16, 4, 110, 105, 125, 255)
             end
 
-            -- KILL SOUND FILE SELECTOR
+            -- KILL SOUND FILE SELECTOR (samostatné tlačítko row_ks_y)
             local row_ks_y = row_ks_start + 32
             draw.Color(180, 175, 195, 255)
             draw.Text(inner_x, row_ks_y + 2, "Kill Sound File:")
