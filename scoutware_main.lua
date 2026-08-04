@@ -1,4 +1,4 @@
-local MOI_MULTSCRIPT_VERSION = "2.3.0"
+local MOI_MULTSCRIPT_VERSION = "1.0.0"
 local EXPECTED_SIGNATURE = "SCOUTWARE_SIGNATURE_V1"
 
 -- =========================================================
@@ -24,7 +24,7 @@ clearCallbacks({
 
 local __MOI_GUILIB = [===[
 local M = {}
-M.VERSION = "2.3"
+M.VERSION = "1.0"
 
 -- SCOUTWARE / FATALITY DESIGN THEME
 local T = {
@@ -42,15 +42,10 @@ local T = {
     texthi      = { 255, 255, 255, 255 },
     widget      = { 32, 26, 46, 255 },
     widgethi    = { 42, 34, 60, 255 },
-    shadow      = { 0, 0, 0, 150 },
 
     title       = "SCOUT",
     title_tld   = "WARE.WTF",
     titlebar    = 46,
-    pad         = 16,
-
-    font        = { "Segoe UI", "Tahoma" },
-    font_size   = 14,
 }
 
 local floor, mmin, mmax = math.floor, math.min, math.max
@@ -88,40 +83,66 @@ end
 function M:Build(opts)
     initFonts()
     callbacks.Register("Draw", "Scoutware_MainDraw", function()
+        -- 1. Automatické zobrazení Watermarku v pravém horním rohu
+        pcall(function()
+            local sw, sh = draw.GetScreenSize()
+            if sw and sw > 0 then
+                local fps = math.floor(1 / globals.AbsoluteFrameTime())
+                local wm_title = "Scoutware.wtf (beta)"
+                local wm_fps = " | FPS: " .. fps
+                if FONT then draw.SetFont(FONT) end
+                local tw1 = textw(wm_title)
+                local tw2 = textw(wm_fps)
+                local wm_w = tw1 + tw2 + 28
+                local wm_h = 32
+                local wm_x = sw - wm_w - 16
+                local wm_y = 16
+
+                -- Pozadí watermarku (Fatality/Scoutware styl)
+                setcol(T.bg)
+                draw.FilledRect(wm_x, wm_y, wm_x + wm_w, wm_y + wm_h)
+                setcol(T.accent)
+                draw.OutlinedRect(wm_x, wm_y, wm_x + wm_w, wm_y + wm_h)
+
+                -- Text watermarku
+                if FONT_B then draw.SetFont(FONT_B) end
+                text(wm_x + 14, wm_y + 9, T.texthi, wm_title, FONT_B)
+                setcol(T.accent)
+                draw.Text(wm_x + 14 + tw1, wm_y + 9, wm_fps)
+            end
+        end)
+
+        -- 2. Vykreslení hlavního menu (pokud je stisknutá klávesa pro menu)
         local open = true
         pcall(function() local m = gui.Reference("MENU") if m then open = m:IsActive() end end)
         if not open then return end
 
         local wx, wy, ww, wh = T.x, T.y, T.w, T.h
 
-        -- Hlavní okno (Scoutware/Fatality styl)
         setcol(T.bg)
         draw.FilledRect(wx, wy, wx + ww, wy + wh)
-        setcol(T.border)
+        setcol(T.accent)
         draw.OutlinedRect(wx, wy, wx + ww, wy + wh)
 
-        -- Horní lišta
         setcol(T.bg2)
         draw.FilledRect(wx, wy, wx + ww, wy + T.titlebar)
         setcol(T.border)
         draw.Line(wx, wy + T.titlebar, wx + ww, wy + T.titlebar)
 
-        -- Logo / Název
         if FONT_B then draw.SetFont(FONT_B) end
         setcol(T.texthi)
         draw.Text(wx + 15, wy + 14, T.title)
         setcol(T.accent)
         draw.Text(wx + 15 + textw(T.title), wy + 14, T.title_tld)
 
-        -- Záložky (Tabs)
-        local tab_w, tab_h = 100, 26
-        local start_x = wx + 160
+        local tab_w, tab_h = 100, 24
+        local start_x = wx + 175
         local mx, my = input.GetMousePos()
         local clicked_mouse = input.IsButtonDown(0x01)
 
         for i, tname in ipairs(tabs_list) do
             local tx = start_x + (i - 1) * (tab_w + 8)
-            local ty = wy + 10
+            local ty = wy + 11
             local hovered = mx >= tx and mx <= tx + tab_w and my >= ty and my <= ty + tab_h
 
             if hovered and clicked_mouse then
@@ -142,27 +163,25 @@ function M:Build(opts)
                 setcol(T.textdim)
             end
             if FONT then draw.SetFont(FONT) end
-            text(tx + tab_w / 2, ty + 5, nil, tname, FONT, "center")
+            text(tx + tab_w / 2, ty + 4, nil, tname, FONT, "center")
         end
 
-        -- Obsahová plocha
         local cx, cy, cw, ch = wx + 14, wy + T.titlebar + 14, ww - 28, wh - T.titlebar - 28
         setcol(T.section)
         draw.FilledRect(cx, cy, cx + cw, cy + ch)
         setcol(T.border)
         draw.OutlinedRect(cx, cy, cx + cw, cy + ch)
 
-        -- Vykreslení obsahu podle aktivní záložky
         if FONT then draw.SetFont(FONT) end
         if active_tab == 1 then
-            text(cx + 20, cy + 20, T.texthi, "Custom Hit & Kill Sounds")
-            text(cx + 20, cy + 50, T.textdim, "Zde budou nastavení zvuků ze složky sounds/")
+            text(cx + 20, cy + 20, T.texthi, "Custom Hit & Kill Sounds Management")
+            text(cx + 20, cy + 45, T.textdim, "Zde proběhne napojení na složku sounds/ pro výběr .vsnd_c")
         elseif active_tab == 2 then
-            text(cx + 20, cy + 20, T.texthi, "Visuals & Watermark")
-            text(cx + 20, cy + 50, T.textdim, "Zde budou nastavení pro watermark a overlay.")
+            text(cx + 20, cy + 20, T.texthi, "Visuals & Watermark Settings")
+            text(cx + 20, cy + 45, T.textdim, "Zde budou nastavení pro overlay a vizuály.")
         elseif active_tab == 3 then
-            text(cx + 20, cy + 20, T.texthi, "Configs & Settings")
-            text(cx + 20, cy + 50, T.textdim, "Zde bude správa konfigurací.")
+            text(cx + 20, cy + 20, T.texthi, "Configs & System Settings")
+            text(cx + 20, cy + 45, T.textdim, "Zde bude správa konfigurací a profilů.")
         end
     end)
     return self
@@ -177,4 +196,4 @@ local __ok, M = pcall(__chunk)
 if not __ok or type(M) ~= "table" then print("[Scoutware] UI load error: " .. tostring(M)); return end
 
 M:Build({ w = 720, h = 500 })
-print("[Scoutware] UI Suite loaded cleanly!")
+print("[Scoutware] Suite 1.0.0 loaded successfully with Watermark!")
